@@ -8,7 +8,11 @@ function FormFile() {
     rectangle: [],
     bucketfill: {},
   });
-
+  const [canvas, setCanvas] = useState([]);
+  const [lines, setLines] = useState([]);
+  const [rectangles, setRectangles] = useState([]);
+  const [bucketfills, setBucketfills] = useState([]);
+  const [cbUF, setCbUF] = useState(false);
   const uploadFile = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -27,6 +31,7 @@ function FormFile() {
                 height: positions[1],
               },
             }));
+
             break;
           case "L":
             setPoints((points) => ({
@@ -73,7 +78,149 @@ function FormFile() {
       console.log(reader.error);
     };
   };
+  useEffect(() => {
+    if (points.canvas) {
+      newCanvas(points.canvas);
+    }
+  }, [points.bucketfill]);
 
+  const newCanvas = ({ width, height }) => {
+    if (width && height) {
+      const borderH = "-".repeat(+width + 2);
+      const borderV = [];
+      for (let i = 1; i <= +height; i++) {
+        borderV.push("\n|" + " ".repeat(+width) + "|");
+      }
+      const newArr = [borderH, ...borderV, `\n${borderH}`];
+      setCanvas([newArr]);
+    }
+  };
+  useEffect(() => {
+    if (points.line) {
+      newLine(points.line);
+    }
+  }, [canvas]);
+
+  const newLine = (lines) => {
+    if (canvas[0]) {
+      const canvasCopy = canvas[0].slice();
+      lines.forEach((line) => {
+        canvasCopy.map((str, index) => {
+          if (
+            line.y1 <= index &&
+            line.y2 >= index &&
+            index < canvasCopy.length - 1
+          ) {
+            try {
+              const oldLine = str;
+              let newLine = oldLine.split("");
+              for (let el = +line.x1 + 1; el <= +line.x2 + 1; el++) {
+                if (newLine[el] === " ") {
+                  newLine[el] = "x";
+                } else if (newLine[el] === "x") {
+                  newLine[el] = "x";
+                }
+              }
+              newLine = newLine.join("");
+              if (newLine !== oldLine) {
+                canvasCopy.splice(index, 1, newLine);
+              }
+            } catch (e) {
+              console.log("Invalid range");
+            }
+          }
+        });
+      });
+      setLines([canvasCopy]);
+    }
+  };
+  useEffect(() => {
+    if (points.rectangle) {
+      newRectangle(points.rectangle);
+    }
+  }, [lines]);
+  const newRectangle = (rectangle) => {
+    if (lines[0]) {
+      const linesCopy = lines[0].slice();
+      rectangle.forEach((line) => {
+        linesCopy.map((str, index) => {
+          const isVertical = +line.y1 <= index && +line.y2 >= index;
+          const isHorizontal = line.y1 == index || line.y2 == index;
+          if (isVertical) {
+            try {
+              const oldLine = str;
+              let newLine = oldLine.split("");
+              for (let el = +line.x1 + 1; el <= +line.x2 + 1; el++) {
+                if (newLine[el] === " ") {
+                  if (el == +line.x1 + 1 || el == +line.x2 + 1) {
+                    newLine[el] = "x";
+                  } else if (isHorizontal) {
+                    newLine[el] = "x";
+                  }
+                } else if (newLine[el] === "x") {
+                  newLine[el] = "x";
+                }
+              }
+              newLine = newLine.join("");
+              if (newLine !== oldLine) {
+                linesCopy.splice(index, 1, newLine);
+              }
+            } catch (e) {
+              console.log("Invalid range");
+            }
+          }
+        });
+      });
+      setRectangles([linesCopy]);
+    }
+  };
+  useEffect(() => {
+    if (points.bucketfill) {
+      newBucketfill(points.bucketfill);
+    }
+  }, [rectangles]);
+  const newBucketfill = ({ x, y, color }) => {
+    if (rectangles[0]) {
+      const rectanglesCopy = rectangles[0].slice();
+      const point = { x, y };
+      const queue = [];
+      queue.push(point);
+      try {
+        while (queue.length) {
+          let { x, y } = queue.pop();
+          rectanglesCopy.map((str, index) => {
+            const oldLine = str;
+            let newLine = oldLine.split("");
+            for (let el = 1; el <= +newLine.length - 1; el++) {
+              if (el == +x && index == +y) {
+                if (
+                  newLine[el] !== "x" &&
+                  newLine[el] !== "|" &&
+                  newLine[el] !== "-" &&
+                  newLine[el] !== color
+                ) {
+                  newLine[el] = color;
+
+                  queue.push({ x: +x + 1, y });
+                  queue.push({ x: +x - 1, y });
+                  queue.push({ x, y: +y - 1 });
+                  queue.push({ x, y: +y + 1 });
+                }
+              }
+            }
+            newLine = newLine.join("");
+            if (newLine !== oldLine) {
+              rectanglesCopy.splice(index, 1, newLine);
+            }
+          });
+        }
+      } catch (e) {
+        console.log("Invalid range");
+      }
+      setBucketfills([rectanglesCopy]);
+    }
+  };
+  const text = bucketfills[0] ? <xmp>{bucketfills[0].join("")}</xmp> : "null";
   const body = (
     <Form>
       <Row>
@@ -94,7 +241,7 @@ function FormFile() {
         <Col>
           {" "}
           <Form.Label>Preview</Form.Label>
-          <Form.Control as="textarea" rows={6} />
+          {text}
         </Col>
       </Row>
     </Form>
