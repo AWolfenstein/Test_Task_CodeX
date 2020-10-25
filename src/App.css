@@ -36,3 +36,15 @@
     transform: rotate(360deg);
   }
 }
+.colForm{
+  margin: 20%;
+  border: 2px outset  rgba(48, 45, 45, 0.22);
+  border-radius: 30px;
+  padding: 10px 15px 10px 15px;
+}
+
+#preview{
+  margin: 5%;
+    justify-content: center;
+    display: flex;
+}

@@ -5,10 +5,10 @@ import { Container, Row, Col } from "react-bootstrap";
 import FormFile from "./components/Form";
 function App() {
   return (
-    <Container>
+    <Container fluid="md">
 
       <Row>
-        <Col>
+        <Col className="colForm">
           <FormFile />
         </Col>
       </Row>
